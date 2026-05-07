@@ -9,3 +9,6 @@ folium
 streamlit-folium
 openai-whisper
 python-multipart
+dotenv
+huggingface_hub
+langchain_huggingface
