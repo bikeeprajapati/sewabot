@@ -1,0 +1,173 @@
+[
+  {
+    "id": "w001",
+    "name": "Ram Thapa",
+    "skill_tags": [
+      "plumber",
+      "pipe repair",
+      "water leakage",
+      "tap installation"
+    ],
+    "rating": 4.8,
+    "total_reviews": 42,
+    "hourly_rate": 500,
+    "lat": 27.7172,
+    "lng": 85.324,
+    "available": true,
+    "bio": "10 years experience in residential plumbing across Kathmandu."
+  },
+  {
+    "id": "w002",
+    "name": "Sita Maharjan",
+    "skill_tags": [
+      "electrician",
+      "wiring",
+      "short circuit",
+      "light installation",
+      "fan repair"
+    ],
+    "rating": 4.6,
+    "total_reviews": 38,
+    "hourly_rate": 600,
+    "lat": 27.7,
+    "lng": 85.31,
+    "available": true,
+    "bio": "Certified electrician specializing in home wiring and appliance repair."
+  },
+  {
+    "id": "w003",
+    "name": "Bikram Shrestha",
+    "skill_tags": [
+      "carpenter",
+      "furniture repair",
+      "door fitting",
+      "wood work"
+    ],
+    "rating": 4.5,
+    "total_reviews": 29,
+    "hourly_rate": 550,
+    "lat": 27.73,
+    "lng": 85.335,
+    "available": true,
+    "bio": "Skilled carpenter for furniture, doors, and custom woodwork."
+  },
+  {
+    "id": "w004",
+    "name": "Kiran Tamang",
+    "skill_tags": [
+      "plumber",
+      "drain cleaning",
+      "toilet repair",
+      "bathroom fitting"
+    ],
+    "rating": 4.3,
+    "total_reviews": 19,
+    "hourly_rate": 450,
+    "lat": 27.705,
+    "lng": 85.318,
+    "available": true,
+    "bio": "Specializes in bathroom plumbing and drain unblocking."
+  },
+  {
+    "id": "w005",
+    "name": "Anita Gurung",
+    "skill_tags": [
+      "painter",
+      "wall painting",
+      "interior painting",
+      "waterproofing"
+    ],
+    "rating": 4.7,
+    "total_reviews": 55,
+    "hourly_rate": 400,
+    "lat": 27.722,
+    "lng": 85.329,
+    "available": true,
+    "bio": "Interior and exterior painting with 8 years experience."
+  },
+  {
+    "id": "w006",
+    "name": "Dinesh Rai",
+    "skill_tags": [
+      "electrician",
+      "inverter installation",
+      "solar panel",
+      "electrical wiring"
+    ],
+    "rating": 4.9,
+    "total_reviews": 61,
+    "hourly_rate": 700,
+    "lat": 27.715,
+    "lng": 85.34,
+    "available": false,
+    "bio": "Expert in solar and inverter systems for homes and offices."
+  },
+  {
+    "id": "w007",
+    "name": "Priya Shrestha",
+    "skill_tags": [
+      "cleaner",
+      "deep cleaning",
+      "kitchen cleaning",
+      "bathroom cleaning"
+    ],
+    "rating": 4.4,
+    "total_reviews": 33,
+    "hourly_rate": 350,
+    "lat": 27.708,
+    "lng": 85.325,
+    "available": true,
+    "bio": "Professional home and office cleaning services."
+  },
+  {
+    "id": "w008",
+    "name": "Suresh Karki",
+    "skill_tags": [
+      "AC technician",
+      "AC repair",
+      "AC installation",
+      "refrigerator repair"
+    ],
+    "rating": 4.6,
+    "total_reviews": 47,
+    "hourly_rate": 650,
+    "lat": 27.719,
+    "lng": 85.316,
+    "available": true,
+    "bio": "HVAC technician with expertise in AC and refrigeration repair."
+  },
+  {
+    "id": "w009",
+    "name": "Maya Lama",
+    "skill_tags": [
+      "carpenter",
+      "cabinet making",
+      "shelf installation",
+      "wood polishing"
+    ],
+    "rating": 4.2,
+    "total_reviews": 14,
+    "hourly_rate": 500,
+    "lat": 27.726,
+    "lng": 85.332,
+    "available": true,
+    "bio": "Specializes in custom cabinets and interior woodwork."
+  },
+  {
+    "id": "w010",
+    "name": "Aakash Pandey",
+    "skill_tags": [
+      "plumber",
+      "gas pipe fitting",
+      "water pump repair",
+      "pipe leakage"
+    ],
+    "rating": 4.5,
+    "total_reviews": 22,
+    "hourly_rate": 480,
+    "lat": 27.712,
+    "lng": 85.321,
+    "available": true,
+    "bio": "Specializes in gas pipe fitting and water pump installation."
+  }
+]
