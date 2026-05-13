@@ -10,6 +10,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from core.classifier import classify_job
 from core.matcher import match_workers
 
+
+
 # ── App setup ────────────────────────────────────────────
 app = FastAPI(
     title="SewaBot API",
@@ -47,6 +49,12 @@ class WorkerOut(BaseModel):
 class MatchResponse(BaseModel):
     job:     dict
     workers: list[WorkerOut]
+
+# Add at the top with other imports
+from api.routers.auth_router import router as auth_router
+
+# Add after app = FastAPI(...)
+app.include_router(auth_router)
 
 # ── Routes ───────────────────────────────────────────────
 
