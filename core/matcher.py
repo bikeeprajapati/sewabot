@@ -1,142 +1,179 @@
+import os
 import json
-import faiss
 import numpy as np
-from sentence_transformers import SentenceTransformer
 from math import radians, sin, cos, sqrt, atan2
+from sentence_transformers import SentenceTransformer
+from sqlalchemy.orm import Session
+from sqlalchemy import text
+from dotenv import load_dotenv
 
-# ── Config ───────────────────────────────────────────────
-INDEX_PATH    = "embeddings/workers.faiss"
-METADATA_PATH = "embeddings/workers_meta.json"
-MODEL_NAME    = "all-MiniLM-L6-v2"
+load_dotenv()
 
-# ── Load once at startup ─────────────────────────────────
-model   = SentenceTransformer(MODEL_NAME)
-index   = faiss.read_index(INDEX_PATH)
+MODEL_NAME = "all-MiniLM-L6-v2"
+model      = SentenceTransformer(MODEL_NAME)
 
-with open(METADATA_PATH, "r") as f:
-    workers = json.load(f)
-
-# ── Haversine distance formula ───────────────────────────
+# ── Haversine distance ───────────────────────────────────
 def haversine(lat1, lng1, lat2, lng2) -> float:
-    """
-    Calculate real-world distance in km between two GPS coordinates.
-    Used to penalise workers who are far from the client.
-    """
-    R = 6371  # Earth radius in km
+    R = 6371
     lat1, lng1, lat2, lng2 = map(radians, [lat1, lng1, lat2, lng2])
     dlat = lat2 - lat1
     dlng = lng2 - lng1
-    a    = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlng/2)**2
+    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlng/2)**2
     return R * 2 * atan2(sqrt(a), sqrt(1 - a))
 
 # ── Scoring formula ──────────────────────────────────────
 def score_worker(skill_sim, rating, distance_km) -> float:
-    """
-    Final ranking score for each worker.
-
-    score = (0.5 × skill_similarity)
-            + (0.3 × rating / 5)
-            - (0.2 × distance_km / 10)
-
-    Weights explained:
-    - Skill fit is most important (0.5)
-    - Trust via rating comes second (0.3)
-    - Distance is a penalty, not disqualifier (0.2)
-    """
-    skill_score    = 0.5 * skill_sim
-    rating_score   = 0.3 * (rating / 5)
-    distance_penalty = 0.2 * min(distance_km / 10, 1.0)  # cap penalty at 1.0
+    skill_score      = 0.5 * skill_sim
+    rating_score     = 0.3 * (rating / 5)
+    distance_penalty = 0.2 * min(distance_km / 10, 1.0)
     return round(skill_score + rating_score - distance_penalty, 4)
 
-# ── Main function ────────────────────────────────────────
-def match_workers(job: dict, client_lat: float, client_lng: float, top_k: int = 3) -> list:
+# ── Main function — now queries PostgreSQL ───────────────
+def match_workers_db(
+    job:        dict,
+    client_lat: float,
+    client_lng: float,
+    db:         Session,
+    radius_km:  int = 10,
+    top_k:      int = 3
+) -> list:
     """
-    Given a classified job and client location,
-    returns top_k ranked workers as a list of dicts.
+    Queries PostgreSQL + PostGIS to find nearby available workers.
+    Ranks them using skill similarity + rating + distance.
 
-    job = {
-        "skill_category": "plumber",
-        "urgency": "high",
-        "location_hint": "Lalitpur",
-        "summary": "Kitchen pipe leaking badly"
-    }
+    Steps:
+    1. PostGIS finds all workers within radius_km of client
+    2. Sentence Transformer embeds the job query
+    3. Cosine similarity scores each worker's skills vs job
+    4. Weighted formula ranks final results
     """
 
-    # 1. Embed the job query
+    # 1. PostGIS radius query — find nearby available verified workers
+    sql = text("""
+        SELECT
+            w.id,
+            w.skill_tags,
+            w.rating_avg,
+            w.total_reviews,
+            w.hourly_rate,
+            w.bio,
+            w.is_available,
+            u.full_name,
+            ST_X(w.location::geometry) AS lng,
+            ST_Y(w.location::geometry) AS lat,
+            ST_Distance(
+                w.location,
+                ST_MakePoint(:lng, :lat)::geography
+            ) / 1000.0 AS distance_km
+        FROM workers w
+        JOIN users u ON u.id = w.user_id
+        WHERE
+            w.is_available = TRUE
+            AND w.is_verified = TRUE
+            AND ST_DWithin(
+                w.location,
+                ST_MakePoint(:lng, :lat)::geography,
+                :radius_meters
+            )
+        ORDER BY distance_km ASC
+        LIMIT 20
+    """)
+
+    rows = db.execute(sql, {
+        "lat":           client_lat,
+        "lng":           client_lng,
+        "radius_meters": radius_km * 1000
+    }).fetchall()
+
+    # If no workers found within radius, expand search
+    if not rows:
+        rows = db.execute(sql, {
+            "lat":           client_lat,
+            "lng":           client_lng,
+            "radius_meters": 50 * 1000   # expand to 50km
+        }).fetchall()
+
+    if not rows:
+        return []
+
+    # 2. Embed job query
     query_text      = job.get("skill_category", "") + " " + job.get("summary", "")
-    query_embedding = model.encode([query_text]).astype("float32")
+    query_embedding = model.encode([query_text])[0]
 
-    # 2. Search FAISS — get top 10 candidates
-    distances, indices = index.search(query_embedding, k=min(10, len(workers)))
-
-    # 3. Convert L2 distances to similarity scores (0 to 1)
-    #    Lower L2 distance = more similar = higher score
-    max_dist = max(distances[0]) if max(distances[0]) > 0 else 1
-    similarities = [1 - (d / max_dist) for d in distances[0]]
-
-    # 4. Score and filter each candidate
+    # 3. Score each worker
     results = []
-    for i, idx in enumerate(indices[0]):
-        worker = workers[idx]
+    for row in rows:
+        # Embed worker skills
+        skill_text       = " ".join(row.skill_tags)
+        worker_embedding = model.encode([skill_text])[0]
 
-        # Skip unavailable workers
-        if not worker.get("available", True):
-            continue
+        # Cosine similarity
+        cos_sim = float(np.dot(query_embedding, worker_embedding) /
+                       (np.linalg.norm(query_embedding) * np.linalg.norm(worker_embedding)))
 
-        distance_km = haversine(client_lat, client_lng, worker["lat"], worker["lng"])
-        skill_sim   = similarities[i]
-        rating      = worker.get("rating", 3.0)
-
-        final_score = score_worker(skill_sim, rating, distance_km)
+        final_score = score_worker(cos_sim, row.rating_avg, row.distance_km)
 
         results.append({
-            "id":           worker["id"],
-            "name":         worker["name"],
-            "skill_tags":   worker["skill_tags"],
-            "rating":       rating,
-            "total_reviews":worker.get("total_reviews", 0),
-            "hourly_rate":  worker.get("hourly_rate", 0),
-            "distance_km":  round(distance_km, 2),
-            "score":        final_score,
-            "bio":          worker.get("bio", ""),
-            "lat":          worker["lat"],
-            "lng":          worker["lng"],
+            "id":            str(row.id),
+            "name":          row.full_name,
+            "skill_tags":    row.skill_tags,
+            "rating":        float(row.rating_avg),
+            "total_reviews": row.total_reviews,
+            "hourly_rate":   row.hourly_rate,
+            "distance_km":   round(float(row.distance_km), 2),
+            "score":         final_score,
+            "bio":           row.bio or "",
+            "lat":           float(row.lat),
+            "lng":           float(row.lng),
         })
 
-    # 5. Sort by score descending → return top_k
+    # 4. Sort by score descending
     results.sort(key=lambda x: x["score"], reverse=True)
     return results[:top_k]
 
 
-# ── Quick test ───────────────────────────────────────────
-if __name__ == "__main__":
-    from classifier import classify_job
+# ── Fallback — still works without DB (for testing) ──────
+def match_workers(job, client_lat, client_lng, top_k=3):
+    """
+    Legacy function using JSON + FAISS.
+    Kept as fallback if DB is unavailable.
+    """
+    import faiss
+    from sentence_transformers import SentenceTransformer
 
-    # Simulate client location — center of Kathmandu
-    CLIENT_LAT = 27.7172
-    CLIENT_LNG = 85.3240
+    INDEX_PATH    = "embeddings/workers.faiss"
+    METADATA_PATH = "embeddings/workers_meta.json"
 
-    test_cases = [
-        "My kitchen pipe is leaking badly, water is everywhere",
-        "The lights in my bedroom stopped working suddenly",
-        "I need someone to fix a broken door in Lalitpur",
-        "My AC is making a loud noise and not cooling",
-    ]
+    index = faiss.read_index(INDEX_PATH)
+    with open(METADATA_PATH) as f:
+        workers = json.load(f)
 
-    for description in test_cases:
-        print("\n" + "=" * 55)
-        print(f"Job: {description}")
+    query_text      = job.get("skill_category","") + " " + job.get("summary","")
+    query_embedding = model.encode([query_text]).astype("float32")
+    distances, indices = index.search(query_embedding, k=min(10, len(workers)))
+    max_dist    = max(distances[0]) if max(distances[0]) > 0 else 1
+    similarities = [1 - (d / max_dist) for d in distances[0]]
 
-        job     = classify_job(description)
-        matches = match_workers(job, CLIENT_LAT, CLIENT_LNG)
+    results = []
+    for i, idx in enumerate(indices[0]):
+        w           = workers[idx]
+        if not w.get("available", True):
+            continue
+        distance_km = haversine(client_lat, client_lng, w["lat"], w["lng"])
+        final_score = score_worker(similarities[i], w.get("rating", 3.0), distance_km)
+        results.append({
+            "id":            w["id"],
+            "name":          w["name"],
+            "skill_tags":    w["skill_tags"],
+            "rating":        w.get("rating", 0),
+            "total_reviews": w.get("total_reviews", 0),
+            "hourly_rate":   w.get("hourly_rate", 0),
+            "distance_km":   round(distance_km, 2),
+            "score":         final_score,
+            "bio":           w.get("bio", ""),
+            "lat":           w["lat"],
+            "lng":           w["lng"],
+        })
 
-        print(f"Classified as: {job['skill_category']} | urgency: {job['urgency']}")
-        print(f"\nTop {len(matches)} matched workers:")
-
-        for rank, w in enumerate(matches, 1):
-            print(f"\n  #{rank} {w['name']}")
-            print(f"      Skills    : {', '.join(w['skill_tags'])}")
-            print(f"      Rating    : {w['rating']} ⭐ ({w['total_reviews']} reviews)")
-            print(f"      Distance  : {w['distance_km']} km")
-            print(f"      Rate      : Rs. {w['hourly_rate']}/hr")
-            print(f"      Score     : {w['score']}")
+    results.sort(key=lambda x: x["score"], reverse=True)
+    return results[:top_k]

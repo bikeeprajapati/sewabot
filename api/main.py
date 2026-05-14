@@ -1,6 +1,9 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from api.database import get_db
+from sqlalchemy.orm import Session
+from core.matcher import match_workers_db
 import sys
 import os
 
@@ -72,20 +75,20 @@ def health():
     return {"status": "ok"}
 
 @app.post("/match", response_model=MatchResponse)
-def match(request: JobRequest):
+def match(request: JobRequest, db: Session = Depends(get_db)):
     """
-    Main endpoint.
-    Accepts a job description + client location.
-    Returns classified job + top 3 matched workers.
+    Main endpoint — now queries PostgreSQL + PostGIS.
+    Accepts job description + client location.
+    Returns classified job + top 3 matched workers from real DB.
     """
     if not request.description.strip():
         raise HTTPException(status_code=400, detail="Job description cannot be empty")
 
     job     = classify_job(request.description)
-    workers = match_workers(job, request.client_lat, request.client_lng)
+    workers = match_workers_db(job, request.client_lat, request.client_lng, db)
 
     if not workers:
-        raise HTTPException(status_code=404, detail="No available workers found")
+        raise HTTPException(status_code=404, detail="No available workers found nearby")
 
     return {"job": job, "workers": workers}
 
