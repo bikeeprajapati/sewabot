@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from api.database import get_db
 from sqlalchemy.orm import Session
 from core.matcher import match_workers_db
+from api.routers.websocket_router import router as ws_router
 import sys
 import os
 
@@ -100,3 +101,5 @@ def get_all_workers():
     """
     from core.matcher import workers as all_workers
     return {"total": len(all_workers), "workers": all_workers}
+
+app.include_router(ws_router)
