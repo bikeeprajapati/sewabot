@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SewaBot — eSewa Payment Test</title>
+    <style>
+        body { font-family: Arial; background: #0a0b0f; color: white;
+                display: flex; align-items: center; justify-content: center;
+                height: 100vh; margin: 0; }
+        .card { background: #1a1d26; border: 1px solid #2a2d3e;
+                border-radius: 16px; padding: 40px; text-align: center;
+                min-width: 420px; }
+        h2 { color: #00d4aa; }
+        .amount { font-size: 48px; font-weight: bold; margin: 20px 0; }
+        .info { background: #22263a; border-radius: 8px; padding: 16px;
+                margin: 16px 0; text-align: left; font-size: 13px; }
+        .info div { margin: 6px 0; color: #aaa; }
+        .info span { color: white; font-weight: 600; }
+        .btn { background: #60bb46; color: white; border: none;
+                padding: 16px 40px; border-radius: 8px; font-size: 18px;
+                font-weight: bold; cursor: pointer; width: 100%;
+                margin-top: 16px; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-init { background: #00d4aa; color: #000; }
+        small { color: #555; font-size: 12px; }
+        #status { margin-top: 12px; font-size: 13px; color: #aaa; }
+        #payment-form { display: none; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h2>🔧 SewaBot Payment Test</h2>
+    <p>Ram Thapa — Plumber</p>
+    <div class="amount">Rs. 500</div>
+
+    <div class="info">
+        <div>Worker earns: <span>Rs. 450</span></div>
+        <div>Platform fee: <span>Rs. 50 (10%)</span></div>
+        <div>Method: <span>eSewa Sandbox</span></div>
+    </div>
+
+    <!-- Step 1: Create payment record via API -->
+    <button class="btn btn-init" onclick="initiatePayment()">
+        Step 1 — Create Payment Record
+    </button>
+
+    <div id="status"></div>
+
+    <!-- Step 2: Auto-submit to eSewa after API responds -->
+    <form id="payment-form"
+            action="https://rc-epay.esewa.com.np/api/epay/main/v2/form"
+            method="POST">
+        <input type="hidden" name="amount"                   id="f-amount"/>
+        <input type="hidden" name="tax_amount"               value="0"/>
+        <input type="hidden" name="total_amount"             id="f-total"/>
+        <input type="hidden" name="transaction_uuid"         id="f-uuid"/>
+        <input type="hidden" name="product_code"             value="EPAYTEST"/>
+        <input type="hidden" name="product_service_charge"   value="0"/>
+        <input type="hidden" name="product_delivery_charge"  value="0"/>
+        <input type="hidden" name="success_url"              value="http://localhost:8001/payments/esewa/success"/>
+        <input type="hidden" name="failure_url"              value="http://localhost:8001/payments/esewa/failure"/>
+        <input type="hidden" name="signed_field_names"       value="total_amount,transaction_uuid,product_code"/>
+        <input type="hidden" name="signature"                id="f-sig"/>
+        <button type="submit" class="btn">
+            💚 Step 2 — Pay with eSewa
+        </button>
+    </form>
+
+    <br>
+    <small>
+        Test credentials: Phone: 9806800001 · Password: Nepal@123 · OTP: 123456
+    </small>
+</div>
+
+<script>
+async function initiatePayment() {
+    const status = document.getElementById('status');
+    status.textContent = 'Creating payment record...';
+
+    try {
+        // First we need a job_id — let's create a test one via match
+        // For demo we use a hardcoded job_id from our seeded data
+        // In production this comes from the booking flow
+
+        const response = await fetch('http://localhost:8001/payments/initiate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                job_id:    'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
+                client_id: 'TEST-CLIENT-001'
+            })
+        });
+
+        const data = await response.json();
+        console.log('Payment data:', data);
+
+        if (response.ok) {
+            status.textContent = `✅ Payment record created! Transaction: ${data.transaction_uuid}`;
+            status.style.color = '#00d4aa';
+
+            // Fill the eSewa form with real data from API
+            document.getElementById('f-amount').value = data.payment_data.amount;
+            document.getElementById('f-total').value  = data.payment_data.total_amount;
+            document.getElementById('f-uuid').value   = data.payment_data.transaction_uuid;
+            document.getElementById('f-sig').value    = data.payment_data.signature;
+
+            // Show the payment form
+            document.getElementById('payment-form').style.display = 'block';
+
+        } else {
+            status.textContent = `❌ Error: ${data.detail}`;
+            status.style.color = '#ff4757';
+        }
+
+    } catch(err) {
+        status.textContent = `❌ Cannot connect to API: ${err.message}`;
+        status.style.color = '#ff4757';
+    }
+}
+</script>
+</body>
+</html>

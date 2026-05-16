@@ -1,20 +1,18 @@
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from api.database import get_db
 from sqlalchemy.orm import Session
-from core.matcher import match_workers_db
+
+from api.database import get_db
+from api.routers.auth_router import router as auth_router
 from api.routers.websocket_router import router as ws_router
-import sys
-import os
-
-# ── So Python finds core/ from api/ ─────────────────────
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
+from api.routers.payment_router import router as payment_router
 from core.classifier import classify_job
-from core.matcher import match_workers
-
-
+from core.matcher import match_workers_db
 
 # ── App setup ────────────────────────────────────────────
 app = FastAPI(
@@ -23,7 +21,7 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# ── CORS — allows Streamlit to talk to FastAPI ───────────
+# ── CORS ─────────────────────────────────────────────────
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -31,10 +29,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ── Request/Response schemas ─────────────────────────────
+# ── Routers ───────────────────────────────────────────────
+app.include_router(auth_router)
+app.include_router(ws_router)
+app.include_router(payment_router)
+
+# ── Schemas ──────────────────────────────────────────────
 class JobRequest(BaseModel):
     description: str
-    client_lat:  float = 27.7172   # default: Kathmandu center
+    client_lat:  float = 27.7172
     client_lng:  float = 85.3240
 
 class WorkerOut(BaseModel):
@@ -54,14 +57,7 @@ class MatchResponse(BaseModel):
     job:     dict
     workers: list[WorkerOut]
 
-# Add at the top with other imports
-from api.routers.auth_router import router as auth_router
-
-# Add after app = FastAPI(...)
-app.include_router(auth_router)
-
 # ── Routes ───────────────────────────────────────────────
-
 @app.get("/")
 def root():
     return {
@@ -77,11 +73,6 @@ def health():
 
 @app.post("/match", response_model=MatchResponse)
 def match(request: JobRequest, db: Session = Depends(get_db)):
-    """
-    Main endpoint — now queries PostgreSQL + PostGIS.
-    Accepts job description + client location.
-    Returns classified job + top 3 matched workers from real DB.
-    """
     if not request.description.strip():
         raise HTTPException(status_code=400, detail="Job description cannot be empty")
 
@@ -94,12 +85,27 @@ def match(request: JobRequest, db: Session = Depends(get_db)):
     return {"job": job, "workers": workers}
 
 @app.get("/workers")
-def get_all_workers():
-    """
-    Returns all workers with their locations.
-    Used by the frontend to plot pins on the map at startup.
-    """
-    from core.matcher import workers as all_workers
-    return {"total": len(all_workers), "workers": all_workers}
+def get_all_workers(db: Session = Depends(get_db)):
+    from api.models import Worker, User
+    from sqlalchemy import text
+    rows = db.execute(text("""
+        SELECT u.full_name, w.skill_tags, w.rating_avg, w.hourly_rate,
+                ST_X(w.location::geometry) AS lng,
+                ST_Y(w.location::geometry) AS lat
+        FROM workers w
+        JOIN users u ON u.id = w.user_id
+        WHERE w.is_available = TRUE
+    """)).fetchall()
 
-app.include_router(ws_router)
+    workers = [
+        {
+            "name":        r.full_name,
+            "skill_tags":  r.skill_tags,
+            "rating":      r.rating_avg,
+            "hourly_rate": r.hourly_rate,
+            "lat":         float(r.lat),
+            "lng":         float(r.lng),
+        }
+        for r in rows
+    ]
+    return {"total": len(workers), "workers": workers}

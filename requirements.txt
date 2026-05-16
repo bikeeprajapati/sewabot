@@ -14,3 +14,4 @@ huggingface_hub
 langchain_huggingface
 shapely
 websockets
+httpx

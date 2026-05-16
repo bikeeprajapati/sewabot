@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SewaBot — eSewa Payment Test</title>
+    <style>
+        body { font-family: Arial; background: #0a0b0f; color: white;
+                display: flex; align-items: center; justify-content: center;
+                height: 100vh; margin: 0; }
+        .card { background: #1a1d26; border: 1px solid #2a2d3e;
+                border-radius: 16px; padding: 40px; text-align: center;
+                min-width: 400px; }
+        h2 { color: #00d4aa; }
+        .amount { font-size: 48px; font-weight: bold; margin: 20px 0; }
+        .info { background: #22263a; border-radius: 8px; padding: 16px;
+                margin: 16px 0; text-align: left; font-size: 13px; }
+        .info div { margin: 6px 0; color: #aaa; }
+        .info span { color: white; }
+        .btn { background: #60bb46; color: white; border: none;
+                padding: 16px 40px; border-radius: 8px; font-size: 18px;
+                font-weight: bold; cursor: pointer; width: 100%;
+                margin-top: 16px; }
+        small { color: #555; font-size: 12px; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h2>🔧 SewaBot Payment</h2>
+    <p>Ram Thapa — Plumber</p>
+    <div class="amount">Rs. 500</div>
+
+    <div class="info">
+        <div>Worker earns: <span>Rs. 450</span></div>
+        <div>Platform fee: <span>Rs. 50 (10%)</span></div>
+        <div>Method: <span>eSewa Sandbox</span></div>
+    </div>
+
+    <form action="https://rc-epay.esewa.com.np/api/epay/main/v2/form" method="POST">
+        <input type="hidden" name="amount"                   value="500"/>
+        <input type="hidden" name="tax_amount"               value="0"/>
+        <input type="hidden" name="total_amount"             value="500"/>
+        <input type="hidden" name="transaction_uuid"         value="test-txn-sewabot-001"/>
+        <input type="hidden" name="product_code"             value="EPAYTEST"/>
+        <input type="hidden" name="product_service_charge"   value="0"/>
+        <input type="hidden" name="product_delivery_charge"  value="0"/>
+        <input type="hidden" name="success_url"              value="http://localhost:8001/payments/esewa/success"/>
+        <input type="hidden" name="failure_url"              value="http://localhost:8001/payments/esewa/failure"/>
+        <input type="hidden" name="signed_field_names"       value="total_amount,transaction_uuid,product_code"/>
+        <input type="hidden" name="signature"                value="83QbZuXS4gX14ryXkzJEg1u9hdwsNiRdaw1eYpJJYyo="/>
+        <button type="submit" class="btn">Pay with eSewa</button>
+    </form>
+
+    <br>
+    <small>
+        Test credentials:<br>
+        Phone: 9806800001 · MPIN: 1122 · OTP: 1122
+    </small>
+</div>
+</body>
+</html>
