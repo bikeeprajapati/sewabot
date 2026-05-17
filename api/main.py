@@ -6,6 +6,7 @@ from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+from fastapi.staticfiles import StaticFiles
 
 from api.database import get_db
 from api.routers.auth_router import router as auth_router
@@ -20,6 +21,7 @@ app = FastAPI(
     description="Uber for skilled workers — AI-powered job matching",
     version="1.0.0"
 )
+app.mount("/ui", StaticFiles(directory="ui", html=True), name="ui")
 
 # ── CORS ─────────────────────────────────────────────────
 app.add_middleware(

@@ -1,0 +1,100 @@
+    .auth-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: var(--bg);
+    }
+
+    .auth-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 40px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: var(--shadow);
+    }
+
+    .auth-logo {
+    text-align: center;
+    margin-bottom: 32px;
+    }
+
+    .auth-logo .logo {
+    font-size: 32px;
+    }
+
+    .auth-logo p {
+    font-size: 13px;
+    color: var(--text2);
+    margin-top: 6px;
+    }
+
+    .auth-tabs {
+    display: flex;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 4px;
+    margin-bottom: 28px;
+    gap: 4px;
+    }
+
+    .auth-tab {
+    flex: 1;
+    padding: 9px;
+    border-radius: var(--radius-xs);
+    border: none;
+    background: transparent;
+    color: var(--text2);
+    font-size: 13px;
+    font-weight: 600;
+    transition: var(--transition);
+    font-family: var(--font-main);
+    }
+
+    .auth-tab.active {
+    background: var(--accent);
+    color: #000;
+    }
+
+    .role-toggle {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    }
+
+    .role-btn {
+    flex: 1;
+    padding: 10px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text2);
+    font-size: 13px;
+    font-weight: 600;
+    transition: var(--transition);
+    font-family: var(--font-main);
+    }
+
+    .role-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0,212,170,0.08);
+    }
+
+    .auth-footer {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 13px;
+    color: var(--text2);
+    }
+
+    .auth-footer a {
+    color: var(--accent);
+    font-weight: 600;
+    }
+
+    .auth-footer a:hover { text-decoration: underline; }

@@ -1,0 +1,94 @@
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>SewaBot — Worker Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <link rel="stylesheet" href="../css/main.css"/>
+    <link rel="stylesheet" href="../css/worker.css"/>
+    </head>
+    <body>
+
+    <!-- Topbar -->
+    <div class="topbar">
+    <div class="logo">Sewa<span>Bot</span></div>
+    <div class="flex gap-12" style="align-items:center;">
+        <span class="text-sm muted">👷 <span id="worker-name"></span></span>
+        <div class="status-dot"></div>
+        <button class="btn btn-secondary" style="padding:8px 14px;font-size:13px;"
+                onclick="logout()">Sign out</button>
+    </div>
+    </div>
+
+    <div class="worker-page">
+
+    <!-- Profile -->
+    <div class="section-label">My Profile</div>
+    <div class="profile-card">
+        <div class="profile-header">
+        <div class="avatar">🔧</div>
+        <div>
+            <div class="profile-name" id="worker-name-large">Ram Thapa</div>
+            <div class="profile-sub">Plumber · Kathmandu</div>
+        </div>
+        </div>
+
+        <div class="profile-stats">
+        <div class="profile-stat">
+            <div class="val">4.8 ⭐</div>
+            <div class="lbl">Rating</div>
+        </div>
+        <div class="profile-stat">
+            <div class="val">42</div>
+            <div class="lbl">Reviews</div>
+        </div>
+        <div class="profile-stat">
+            <div class="val">Rs.500</div>
+            <div class="lbl">Per hour</div>
+        </div>
+        <div class="profile-stat">
+            <div class="val">12</div>
+            <div class="lbl">Jobs done</div>
+        </div>
+        </div>
+
+        <div class="skill-tags" style="margin-top:14px;">
+        <span class="skill-tag">Plumber</span>
+        <span class="skill-tag">Pipe Repair</span>
+        <span class="skill-tag">Water Leakage</span>
+        <span class="skill-tag">Tap Installation</span>
+        </div>
+
+        <div class="toggle-wrap">
+        <span class="toggle-label" id="availability-label">🟢 Available for jobs</span>
+        <label class="toggle">
+            <input type="checkbox" checked onchange="toggleAvailability(this)"/>
+            <span class="slider"></span>
+        </label>
+        </div>
+    </div>
+
+    <!-- Incoming jobs -->
+    <div class="section-label" style="margin-top:24px;">📋 Incoming Requests</div>
+    <div class="job-list" id="job-list">
+        <!-- Rendered by worker.js -->
+    </div>
+
+    <!-- Map -->
+    <div class="section-label" style="margin-top:24px;">🗺️ Your Location</div>
+    <div class="worker-map-wrap">
+        <div id="worker-map" style="height:300px;"></div>
+    </div>
+
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/map.js"></script>
+    <script src="../js/websocket.js"></script>
+    <script src="../js/worker.js"></script>
+    </body>
+    </html>

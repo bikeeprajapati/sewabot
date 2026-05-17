@@ -1,0 +1,94 @@
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>SewaBot — Sign In</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="../css/main.css"/>
+    <link rel="stylesheet" href="../css/auth.css"/>
+    </head>
+    <body>
+    <div class="auth-page">
+    <div class="auth-card">
+
+        <div class="auth-logo">
+        <div class="logo">Sewa<span>Bot</span></div>
+        <p>Skilled workers, on demand</p>
+        </div>
+
+        <!-- Tabs -->
+        <div class="auth-tabs">
+        <button class="auth-tab active" data-tab="login" onclick="switchTab('login')">Sign In</button>
+        <button class="auth-tab" data-tab="register" onclick="switchTab('register')">Register</button>
+        </div>
+
+        <!-- Login form -->
+        <form id="login-form">
+        <div class="form-group">
+            <label class="form-label">Email</label>
+            <input class="input" id="login-email" type="email" placeholder="you@example.com" autocomplete="email"/>
+            <span class="form-error" id="login-email-error"></span>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Password</label>
+            <input class="input" id="login-password" type="password" placeholder="Your password" autocomplete="current-password"/>
+            <span class="form-error" id="login-password-error"></span>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full" id="login-btn">Sign In</button>
+        </form>
+
+        <!-- Register form -->
+        <form id="register-form" class="hidden">
+
+        <!-- Role toggle -->
+        <div class="form-group">
+            <label class="form-label">I am a</label>
+            <div class="role-toggle">
+            <button type="button" class="role-btn active" data-role="client" onclick="selectRole('client')">🙋 Client</button>
+            <button type="button" class="role-btn" data-role="worker" onclick="selectRole('worker')">👷 Worker</button>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Full Name</label>
+            <input class="input" id="reg-name" type="text" placeholder="Bikee Prajapati"/>
+            <span class="form-error" id="reg-name-error"></span>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Email</label>
+            <input class="input" id="reg-email" type="email" placeholder="you@example.com"/>
+            <span class="form-error" id="reg-email-error"></span>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Phone (optional)</label>
+            <input class="input" id="reg-phone" type="tel" placeholder="98XXXXXXXX"/>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Password</label>
+            <input class="input" id="reg-password" type="password" placeholder="Min 8 chars, 1 number"/>
+            <span class="form-error" id="reg-password-error"></span>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Confirm Password</label>
+            <input class="input" id="reg-confirm" type="password" placeholder="Repeat password"/>
+            <span class="form-error" id="reg-confirm-error"></span>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-full" id="register-btn">Create Account</button>
+        </form>
+
+        <div class="auth-footer">
+        <span id="switch-hint">Don't have an account?</span>
+        <a href="#" onclick="switchTab(document.querySelector('.auth-tab.active').dataset.tab === 'login' ? 'register' : 'login')">
+            Switch
+        </a>
+        </div>
+    </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+    </body>
+    </html>
